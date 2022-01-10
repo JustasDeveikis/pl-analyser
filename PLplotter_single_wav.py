@@ -1,9 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-plt.style.use('nature.mplstyle')    # use custom style defined in "nature.mplstyle"
+from matplotlib.widgets import Button
+import matplotlib as mpl
+from pylab import cm
 
+mpl.rcParams['font.family'] = 'Arial'
+plt.rcParams['font.size'] = 16
+plt.rcParams['axes.linewidth'] = 2
+colors = cm.get_cmap('tab10', 2)
+plt.rcParams["figure.figsize"] = (9,9)#(18,6)
+
+colormap = 'afmhot'
 name = 'test2.sdm'  # name of the data file
 
 class PLmap():
@@ -23,6 +31,8 @@ class PLmap():
 
         self.madeplot = False
         self.clickedspectrum = False
+        
+        self.png_no = 1
 
     def extract_coordinates(self):
         y = np.unique(self.data[:, 1])
@@ -69,9 +79,10 @@ class PLmap():
             ind = self.newind
         else:
             ind = self.wind
-
+        
+        global map_data
         map_data = np.reshape(self.data[:, ind], (len(self.y), len(self.x)))
-        cf = self.ax.pcolormesh(self.X, self.Y, map_data, cmap='afmhot', shading='auto')
+        cf = self.ax.pcolormesh(self.X, self.Y, map_data, cmap=colormap, shading='auto')
         self.cbar = self.fig.colorbar(cf, cax=self.cax)
         self.map_labels()
         self.ax.set_title(f'Map @ {self.wav[ind]} nm')
@@ -85,12 +96,12 @@ class PLmap():
         self.X, self.Y = np.meshgrid(self.x, self.y)
         self.wind = self.find_wav(lambda0)  # wavelength index
 
-        self.fig = plt.figure()
-
+        self.fig = plt.figure('PL data analyser')
+        
         self.ax = plt.subplot2grid((5, 5), (0, 2), colspan=3, rowspan=4)
         self.cax = make_axes_locatable(self.ax).append_axes("right", size="5%", pad="2%")
         self.ax2 = plt.subplot2grid((5, 5), (1, 0), colspan=2, rowspan=2)
-
+        
         self.generate_map()
 
         self.fig.canvas.mpl_connect('button_press_event', self.onclick)
@@ -122,6 +133,7 @@ class PLmap():
 
             self.fig.canvas.draw()
             self.madeplot = True
+            
 
         if event.inaxes == self.ax2 and self.madeplot:
             self.clickedspectrum = True
@@ -161,13 +173,32 @@ class PLmap():
 
         self.ax2.set_xlabel('$\lambda$ (nm)')
         self.ax2.set_ylabel('Intensity (a.u.)')
+        self.ax2.grid(True)
 
     def clear_all_axes(self):
         self.ax.clear()
         self.ax2.clear()
         self.cax.clear()
+    
+    def save_png(self, event):
+        fig, ax = plt.subplots()
+        ax.pcolormesh(map_data, cmap=colormap, shading='auto')
+        extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+        png_name = 'figure' + str(self.png_no) + '.png'
+        print(png_name)
+        
+        fig.savefig(png_name, bbox_inches=extent)
+        
+        plt.close()
+        print(f'Data saved as {png_name}')
+        self.png_no = self.png_no + 1
 
 
 if __name__ == '__main__':
     plotter = PLmap()
     plotter.plot_map(780)
+    
+    # Create a button for saving png image
+    saving = plt.axes([0.7, 0.05, 0.2, 0.075])
+    bsaving = Button(saving, 'Save .png')
+    bsaving.on_clicked(plotter.save_png)
