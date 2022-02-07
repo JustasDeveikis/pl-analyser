@@ -76,26 +76,38 @@ class PLmap():
 
     def generate_map(self):
         if self.clickedmap and self.clickedspectrum:
+            ind0 = self.newind0
             ind = self.newind
         else:
+            ind0 = self.wind0
             ind = self.wind
         
         global map_data
-        map_data = np.reshape(self.data[:, ind], (len(self.y), len(self.x)))
+        
+        map_data = np.zeros((len(self.y), len(self.x)))
+        ind_arr = np.arange(ind0, ind)
+        for ind in ind_arr:
+            md = np.reshape(self.data[:, ind], (len(self.y), len(self.x)))
+            map_data = map_data + md
+        
+        
+        # map_data = np.reshape(self.data[:, ind], (len(self.y), len(self.x)))
         cf = self.ax.pcolormesh(self.X, self.Y, map_data, cmap=colormap, shading='auto')
         self.cbar = self.fig.colorbar(cf, cax=self.cax)
         self.map_labels()
-        self.ax.set_title(f'Map @ {self.wav[ind]} nm')
+        self.ax.set_title(f'Map int from {self.wav[ind0]} to {self.wav[ind]} nm.')
 
         self.hbar, = self.ax.plot((self.x[0], self.x[-1]), [max(self.y), max(self.y)], 'k--')
         self.vbar, = self.ax.plot([max(self.x), max(self.x)], (self.y[0], self.y[-1]), 'k--')
 
-    def plot_map(self, lambda0):
+    def plot_map(self, lambda0, lambda1):
         self.x, self.y = self.extract_coordinates()
         self.wav = self.extract_wavelengths()
         self.X, self.Y = np.meshgrid(self.x, self.y)
-        self.wind = self.find_wav(lambda0)  # wavelength index
-
+        
+        self.wind0 = self.find_wav(lambda0)  # wavelength index
+        self.wind = self.find_wav(lambda1)  # wavelength index
+        
         self.fig = plt.figure('PL data analyser')
         
         self.ax = plt.subplot2grid((5, 5), (0, 2), colspan=3, rowspan=4)
@@ -109,27 +121,48 @@ class PLmap():
         plt.show()
     
     def create_sliders(self):
-        axslider = plt.axes([0.08, 0.3, 0.25, 0.02])
-        self.spectrum_slider = Slider(ax=axslider, label='start (nm)', valmin=np.amin(self.wav), valmax=np.amax(self.wav), valinit=self.wav[self.wind])
-        self.spectrum_slider.on_changed(self.update_sliders)
+        axslider1 = plt.axes([0.08, 0.3, 0.25, 0.02])
+        self.spectrum_slider0 = Slider(ax=axslider1, label='start (nm)', 
+                                       valmin=np.amin(self.wav), valmax=np.amax(self.wav), 
+                                       valinit=self.wav[self.wind0],
+                                       color='red')
+        self.spectrum_slider0.on_changed(self.update_sliders)
+        
+        axslider2 = plt.axes([0.08, 0.25, 0.25, 0.02])
+        self.spectrum_slider1 = Slider(ax=axslider2, label='end (nm)',
+                                       valmin=np.amin(self.wav), valmax=np.amax(self.wav), 
+                                       valinit=self.wav[self.wind],
+                                       color='blue')
+        self.spectrum_slider1.on_changed(self.update_sliders)
+
     
     
     def update_sliders(self, val):
         self.clickedspectrum = True
-        self.lam = self.spectrum_slider.val
         
+        self.lam0 = self.spectrum_slider0.val
+        self.lam = self.spectrum_slider1.val
+        
+        self.newind0 = self.find_wav(self.lam0)
         self.newind = self.find_wav(self.lam)
         
-        print(f'lambda = {self.wav[self.newind]} (nm).')
-       
-        self.newind = self.find_wav(self.lam)
-       
+        if self.wav[self.newind0] >= self.wav[self.newind]:
+            print('Bad choice of wavelengths!')
+        else:
+            print(f'Integrate PL map from {self.wav[self.newind0]} to {self.wav[self.newind]}.')
+        
+        
+        self.svbar0.set_xdata([self.wav[self.newind0], self.wav[self.newind0]])
         self.svbar.set_xdata([self.wav[self.newind], self.wav[self.newind]])
+       
+        # self.svbar2.set_xdata([self.newwav2, self.newwav2])
 
         self.ax.clear()
+        # self.spectrum_slider.set_val(self.wav[self.newind])
 
         self.generate_map()
         self.update_map_marker()
+
 
 
     def onclick(self, event):
@@ -148,19 +181,28 @@ class PLmap():
             self.ax2.plot(self.wav, spectrum)
 
             if self.clickedmap and self.clickedspectrum:
+                self.newwav0 = self.wav[self.newind0]
                 self.newwav = self.wav[self.newind]
             else:
+                self.newwav0 = self.wav[self.wind0]
                 self.newwav = self.wav[self.wind]
-
-            self.svbar, = self.ax2.plot([self.newwav, self.newwav], (np.amin(self.data), 1.1*np.amax(self.data)), 'k--')
+            
+            self.svbar0, = self.ax2.plot([self.newwav0, self.newwav0], (np.amin(self.data), 1.1*np.amax(self.data)), 'r--')
+            self.svbar, = self.ax2.plot([self.newwav, self.newwav], (np.amin(self.data), 1.1*np.amax(self.data)), 'b--')
+            
+            ### 2nd marker
+            # self.wind2 = self.find_wav(740)
+            # self.newwav2 = self.wav[self.wind2]
+            # self.svbar2, = self.ax2.plot([self.newwav2, self.newwav2], (np.amin(self.data), 1.1*np.amax(self.data)), 'k--')
             
             self.spectrum_labels()
             self.fig.canvas.draw()
             
             if self.clickedmap == False:
                 self.create_sliders()
-            
             self.clickedmap = True
+    
+
 
     def update_map_marker(self):
         self.hbar.set_ydata([self.y[self.yindex], self.y[self.yindex]])
@@ -189,8 +231,12 @@ class PLmap():
         fig, ax = plt.subplots()
         ax.pcolormesh(map_data, cmap=colormap, shading='auto')
         extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-        png_name = 'figure' + str(self.png_no) + '.png'
-        print(png_name)
+        
+        wav0 = format(self.wav[self.newind0], '.2f')
+        wav = format(self.wav[self.newind], '.2f')
+
+        png_name = 'figure' + str(self.png_no) + '_' + str(wav0) + '-' + str(wav) + '.png'
+        
         
         fig.savefig(png_name, bbox_inches=extent)
         
@@ -201,7 +247,7 @@ class PLmap():
 
 if __name__ == '__main__':
     plotter = PLmap()
-    plotter.plot_map(780)
+    plotter.plot_map(740, 780)
     
     # Create a button for saving png image
     saving = plt.axes([0.7, 0.05, 0.2, 0.075])
