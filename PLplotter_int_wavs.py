@@ -163,7 +163,6 @@ class PLmap():
         
         self.cslider1.remove()
         self.cslider2.remove()
-        self.clickedcolorbar = False
         self.create_colorbars()
     
     
