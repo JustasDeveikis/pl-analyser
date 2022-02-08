@@ -6,10 +6,10 @@ import matplotlib as mpl
 from pylab import cm
 
 mpl.rcParams['font.family'] = 'Arial'
-plt.rcParams['font.size'] = 16
-plt.rcParams['axes.linewidth'] = 2
+plt.rcParams['font.size'] = 12
+plt.rcParams['axes.linewidth'] = 1
 colors = cm.get_cmap('tab10', 2)
-plt.rcParams["figure.figsize"] = (9,9)#(18,6)
+plt.rcParams["figure.figsize"] = (12,9)
 
 colormap = 'afmhot'
 name = 'test2.sdm'  # name of the data file
@@ -90,17 +90,19 @@ class PLmap():
             md = np.reshape(self.data[:, ind], (len(self.y), len(self.x)))
             map_data = map_data + md
         
-        
         # map_data = np.reshape(self.data[:, ind], (len(self.y), len(self.x)))
         cf = self.ax.pcolormesh(self.X, self.Y, map_data, cmap=colormap, shading='auto')
+        
         self.cbar = self.fig.colorbar(cf, cax=self.cax)
         self.map_labels()
         self.ax.set_title(f'Map int from {self.wav[ind0]} to {self.wav[ind]} nm.')
-
+        
         self.hbar, = self.ax.plot((self.x[0], self.x[-1]), [max(self.y), max(self.y)], 'k--')
         self.vbar, = self.ax.plot([max(self.x), max(self.x)], (self.y[0], self.y[-1]), 'k--')
-
-    def plot_map(self, lambda0, lambda1):
+        
+        
+        
+    def plot_figure(self, lambda0, lambda1):
         self.x, self.y = self.extract_coordinates()
         self.wav = self.extract_wavelengths()
         self.X, self.Y = np.meshgrid(self.x, self.y)
@@ -110,15 +112,16 @@ class PLmap():
         
         self.fig = plt.figure('PL data analyser')
         
-        self.ax = plt.subplot2grid((5, 5), (0, 2), colspan=3, rowspan=4)
+        self.ax = plt.subplot2grid((5, 6), (0, 2), colspan=3, rowspan=4)
         self.cax = make_axes_locatable(self.ax).append_axes("right", size="5%", pad="2%")
-        self.ax2 = plt.subplot2grid((5, 5), (1, 0), colspan=2, rowspan=2)
+        self.ax2 = plt.subplot2grid((5, 6), (1, 0), colspan=2, rowspan=2)
         
         self.generate_map()
         
         self.fig.canvas.mpl_connect('button_press_event', self.onclick)
         plt.tight_layout()
         plt.show()
+    
     
     def create_sliders(self):
         axslider1 = plt.axes([0.08, 0.3, 0.25, 0.02])
@@ -134,7 +137,6 @@ class PLmap():
                                        valinit=self.wav[self.wind],
                                        color='blue')
         self.spectrum_slider1.on_changed(self.update_sliders)
-
     
     
     def update_sliders(self, val):
@@ -149,22 +151,52 @@ class PLmap():
         if self.wav[self.newind0] >= self.wav[self.newind]:
             print('Bad choice of wavelengths!')
         else:
-            print(f'Integrate PL map from {self.wav[self.newind0]} to {self.wav[self.newind]}.')
-        
+            print(f'Integrate PL map from {self.wav[self.newind0]} to {self.wav[self.newind]} nm.')
         
         self.svbar0.set_xdata([self.wav[self.newind0], self.wav[self.newind0]])
         self.svbar.set_xdata([self.wav[self.newind], self.wav[self.newind]])
-       
-        # self.svbar2.set_xdata([self.newwav2, self.newwav2])
 
         self.ax.clear()
-        # self.spectrum_slider.set_val(self.wav[self.newind])
-
+        
         self.generate_map()
         self.update_map_marker()
+        
+        self.cslider1.remove()
+        self.cslider2.remove()
+        self.clickedcolorbar = False
+        self.create_colorbars()
+    
+    
+    def create_colorbars(self):
+        self.cslider1 = plt.axes([0.88, 0.5, 0.02, 0.25])
+        self.colorbar_slider1 = Slider(ax=self.cslider1, label='min', 
+                                       valmin=np.amin(map_data), valmax=np.amax(map_data), 
+                                       valinit=np.amin(map_data),
+                                       color='yellow',
+                                       orientation='vertical')
+        self.colorbar_slider1.on_changed(self.update_colorbars)
+        
+        self.cslider2 = plt.axes([0.95, 0.5, 0.02, 0.25])
+        self.colorbar_slider2 = Slider(ax=self.cslider2, label='max', 
+                                       valmin=np.amin(map_data), valmax=np.amax(map_data), 
+                                       valinit=np.amax(map_data),
+                                       color='yellow',
+                                       orientation='vertical')
+        self.colorbar_slider2.on_changed(self.update_colorbars)
+    
+    def update_colorbars(self, val):
+        self.clickedcolorbar = True
+        self.cmin = self.colorbar_slider1.val
+        self.cmax = self.colorbar_slider2.val
+        
+        if self.cmax < self.cmin:
+            print('Bad choice of colorbar limits!')
+        else:
+            cf = self.ax.pcolormesh(self.X, self.Y, map_data, cmap=colormap, vmin=self.cmin, vmax=self.cmax, shading='auto')
+            self.cbar = self.fig.colorbar(cf, cax=self.cax)
 
-
-
+        
+        
     def onclick(self, event):
         if event.inaxes==self.ax:
             self.ix, self.iy = event.xdata, event.ydata
@@ -200,6 +232,7 @@ class PLmap():
             
             if self.clickedmap == False:
                 self.create_sliders()
+                self.create_colorbars()
             self.clickedmap = True
     
 
@@ -241,13 +274,13 @@ class PLmap():
         fig.savefig(png_name, bbox_inches=extent)
         
         plt.close()
-        print(f'Data saved as {png_name}')
+        print(f'Data saved as {png_name}.')
         self.png_no = self.png_no + 1
 
 
 if __name__ == '__main__':
     plotter = PLmap()
-    plotter.plot_map(740, 780)
+    plotter.plot_figure(720, 800)
     
     # Create a button for saving png image
     saving = plt.axes([0.7, 0.05, 0.2, 0.075])
