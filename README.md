@@ -2,13 +2,15 @@
 
 Code to visualise PL maps.
 
-`PLplotter_single_wav.py` - code used to look at PL maps at single wavelength.
+`PLplotter_single_wav.py` - code used to analyse at PL maps at single wavelength.
+`PLplotter_int_wavs.py` - code used to analyse integrated PL maps of the chosen wavelength range.
 
 How to use the code:
-1. Run the code and wait for plot window to open.
-2. PL map is displayed on the right-hand side of the screen and the spectrum is on the left-hand side (spectrum is empty by default).
-3. Click anywhere on the PL map and the red marker will highlight the position of the point just clicked and the spectrum of that point will be shown in the other subplot.
-4. Click on the spectrum to change the wavelength of PL map displayed on the right-hand side of the window.
+1. Run the code and wait for figure to open.
+2. PL map is displayed on the right-hand side of the screen and the spectrum is on the left-hand side (spectrum subplot is empty until a point in PL map is clicked).
+3. Click anywhere on the PL map and the marker will appear highlighting the position of the point just clicked. Spectrum of that point is displayed in spectrum subplot.
+4. Click on the slider (sliders) below spectrum subplot to change the wavelength of PL map displayed on the right-hand side of the window (adjust wavelength range for integration).
+5. Adjust limits of colorbars (yellow) by using yellow sliders (min and max).
 
 `test2.sdm` was used for plotting data.
 
