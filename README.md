@@ -1,6 +1,6 @@
 ###### pl-analyser
 
-Code to look at PL maps at different wavelengths.
+Code to visualise PL maps.
 
 `PLplotter_single_wav.py` - code used to look at PL maps at single wavelength.
 
