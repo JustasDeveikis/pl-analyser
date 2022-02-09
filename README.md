@@ -13,6 +13,6 @@ How to use the code:
 4. Click on the slider (sliders) below spectrum subplot to change the wavelength of PL map displayed on the right-hand side of the window (adjust wavelength range for integration).
 5. Adjust limits of colorbars (yellow) by using yellow sliders (min and max).
 
-`test2.sdm` was used for plotting data.
+To change file name for plotting data, edit the line at the top of the code (name = 'test2.sdm').
 
 `pl-analyser-environment.yml` - conda environment file.
