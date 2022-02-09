@@ -31,6 +31,7 @@ class PLmap():
 
         self.clickedmap = False
         self.clickedspectrum = False
+        self.clickedcolorbar = False
         
         self.png_no = 1
 
@@ -124,14 +125,14 @@ class PLmap():
     
     
     def create_sliders(self):
-        axslider1 = plt.axes([0.08, 0.3, 0.25, 0.02])
+        axslider1 = plt.axes([0.08, 0.3, 0.2, 0.02])
         self.spectrum_slider0 = Slider(ax=axslider1, label='start (nm)', 
                                        valmin=np.amin(self.wav), valmax=np.amax(self.wav), 
                                        valinit=self.wav[self.wind0],
                                        color='red')
         self.spectrum_slider0.on_changed(self.update_sliders)
         
-        axslider2 = plt.axes([0.08, 0.25, 0.25, 0.02])
+        axslider2 = plt.axes([0.08, 0.25, 0.2, 0.02])
         self.spectrum_slider1 = Slider(ax=axslider2, label='end (nm)',
                                        valmin=np.amin(self.wav), valmax=np.amax(self.wav), 
                                        valinit=self.wav[self.wind],
@@ -261,14 +262,22 @@ class PLmap():
     
     def save_png(self, event):
         fig, ax = plt.subplots()
-        ax.pcolormesh(map_data, cmap=colormap, shading='auto')
+        
+        if self.clickedcolorbar:
+            ax.pcolormesh(map_data, cmap=colormap, vmin=self.cmin, vmax=self.cmax, shading='auto')
+        else:
+            ax.pcolormesh(map_data, cmap=colormap, shading='auto')
+        
         extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
         
-        wav0 = format(self.wav[self.newind0], '.2f')
-        wav = format(self.wav[self.newind], '.2f')
-
-        png_name = 'figure' + str(self.png_no) + '_' + str(wav0) + '-' + str(wav) + '.png'
+        if self.clickedspectrum:
+            wav0 = format(self.wav[self.newind0], '.2f')
+            wav = format(self.wav[self.newind], '.2f')
+        else:
+            wav0 = format(self.wav[self.wind0], '.2f')
+            wav = format(self.wav[self.wind], '.2f')
         
+        png_name = 'figure' + str(self.png_no) + '_' + str(wav0) + '-' + str(wav) + '.png'
         
         fig.savefig(png_name, bbox_inches=extent)
         
