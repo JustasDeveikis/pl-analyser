@@ -31,6 +31,7 @@ class PLmap():
 
         self.clickedmap = False
         self.clickedspectrum = False
+        self.clickedcolorbar = False
         
         self.png_no = 1
 
@@ -218,10 +219,21 @@ class PLmap():
     
     def save_png(self, event):
         fig, ax = plt.subplots()
-        ax.pcolormesh(map_data, cmap=colormap, shading='auto')
+        
+        if self.clickedcolorbar:
+            ax.pcolormesh(map_data, cmap=colormap, vmin=self.cmin, vmax=self.cmax, shading='auto')
+        else:
+            ax.pcolormesh(map_data, cmap=colormap, shading='auto')
+        
         extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
         
-        wav = format(self.wav[self.newind], '.2f')
+        if self.clickedspectrum:
+            wav = format(self.wav[self.newind], '.2f')
+        else:
+            wav = format(self.wav[self.wind], '.2f')
+        
+        extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+        
         png_name = 'figure' + str(self.png_no) + '_' + str(wav) + '.png'
         
         fig.savefig(png_name, bbox_inches=extent)
